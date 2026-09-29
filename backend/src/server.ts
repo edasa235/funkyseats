@@ -2,6 +2,8 @@ import Fastify from "fastify";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import { seatsRoutes } from "./routes/seats";
+import { reservationsRoutes } from "./routes/reservations";
+
 const app = Fastify({
     logger: true
 });
@@ -22,6 +24,7 @@ async function start() {
     });
 
     await app.register(seatsRoutes);
+    await app.register(reservationsRoutes);
 
     app.get("/", async () => {
         return {
@@ -34,4 +37,5 @@ async function start() {
         host: "0.0.0.0"
     });
 }
+
 start();
