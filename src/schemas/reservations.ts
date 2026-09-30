@@ -4,25 +4,21 @@ export const reservationSchema = {
         id: {
             type: "integer"
         },
-        seat_id: {
+        seatId: {
             type: "integer"
         },
-        user_email: {
+        userId: {
+            type: "integer"
+        },
+        startTime: {
             type: "string",
-            format: "email",
-            maxLength: 255
+            format: "date-time"
         },
-        reservation_date: {
+        endTime: {
             type: "string",
-            format: "date"
+            format: "date-time"
         },
-        start_time: {
-            type: "string"
-        },
-        end_time: {
-            type: "string"
-        },
-        created_at: {
+        createdAt: {
             type: "string",
             format: "date-time"
         }
