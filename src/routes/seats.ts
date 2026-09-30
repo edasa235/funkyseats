@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { seatSchema } from "../schemas/seats";
+import {createSeat, deleteSeat, getAllSeats, getSeatById, updateSeat} from "../db/operations/seats";
 
 export async function seatsRoutes(app: FastifyInstance) {
     app.get("/seats", {
@@ -15,7 +16,7 @@ export async function seatsRoutes(app: FastifyInstance) {
         }
     }, async (request, reply) => {
 
-        return [];
+        return await getAllSeats();
     });
 
     app.get("/seats/:seatid", {
@@ -25,7 +26,7 @@ export async function seatsRoutes(app: FastifyInstance) {
             params: {
                 type: "object",
                 properties: {
-                    seatid: { type: "string" }
+                    seatid: { type: "number" },
                 },
                 required: ["seatid"]
             },
@@ -35,10 +36,15 @@ export async function seatsRoutes(app: FastifyInstance) {
         }
     }, async (request, reply) => {
 
-        return {
-        };
+        const { seatid } = request.params as { seatid: string };
+        const seat = await getSeatById(Number(seatid));
+        if (!seat) {
+            return reply.code(404).send({
+                message: "Seat not found"
+            });
+        }
+        return seat;
     });
-
     app.post("/seats", {
         schema: {
             description: "Create a new seat",
@@ -57,11 +63,20 @@ export async function seatsRoutes(app: FastifyInstance) {
         }
     }, async (request, reply) => {
 
-        reply.code(201);
-
-        return {
+        const body = request.body as {
+            name: string;
+            roomId: number;
         };
+
+        const seat = await createSeat(
+            body.name,
+            body.roomId
+        );
+
+        return reply.code(201).send(seat);
     });
+
+
     app.patch("/seats/:seatid", {
         schema: {
             description: "Update a seat",
@@ -87,8 +102,25 @@ export async function seatsRoutes(app: FastifyInstance) {
         }
     }, async (request, reply) => {
 
-        return {
+        const { seatid } = request.params as { seatid: string };
+
+        const body = request.body as {
+            name?: string;
+            roomId?: number;
         };
+
+        const seat = await updateSeat(
+            Number(seatid),
+            body
+        );
+
+        if (!seat) {
+            return reply.code(404).send({
+                message: "Seat not found"
+            });
+        }
+
+        return seat;
     });
 
 
@@ -111,6 +143,16 @@ export async function seatsRoutes(app: FastifyInstance) {
         }
     }, async (request, reply) => {
 
-        reply.code(204);
+        const { seatid } = request.params as { seatid: string };
+
+        const seat = await deleteSeat(Number(seatid));
+
+        if (!seat) {
+            return reply.code(404).send({
+                message: "Seat not found"
+            });
+        }
+
+        return reply.code(204).send();
     });
 }
