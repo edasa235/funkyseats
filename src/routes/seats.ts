@@ -7,6 +7,7 @@ import {
     getSeatById,
     updateSeat
 } from "../db/operations/seats";
+import {CreateSeatBody, SeatParams, UpdateSeatBody} from "../types/seats";
 
 export async function seatsRoutes(app: FastifyInstance) {
 
@@ -44,9 +45,10 @@ export async function seatsRoutes(app: FastifyInstance) {
         }
     }, async (request, reply) => {
 
-        const { seatid } = request.params as { seatid: string };
+        const { seatid } = request.params as SeatParams;
 
-        const seat = await getSeatById(Number(seatid));
+        const seat = await getSeatById(seatid);
+
 
         if (!seat) {
             return reply.code(404).send({
@@ -77,11 +79,7 @@ export async function seatsRoutes(app: FastifyInstance) {
         }
     }, async (request, reply) => {
 
-        const body = request.body as {
-            name: string;
-            type?: string;
-            bookingRestriction?: string;
-        };
+        const body = request.body as CreateSeatBody;
 
         const seat = await createSeat(
             body.name,
@@ -118,19 +116,10 @@ export async function seatsRoutes(app: FastifyInstance) {
         }
     }, async (request, reply) => {
 
-        const { seatid } = request.params as { seatid: string };
+        const { seatid } = request.params as SeatParams;
+        const body = request.body as UpdateSeatBody;
 
-        const body = request.body as {
-            name?: string;
-            type?: string;
-            bookingRestriction?: string;
-        };
-
-        const seat = await updateSeat(
-            Number(seatid),
-            body
-        );
-
+        const seat = await updateSeat(seatid, body);
         if (!seat) {
             return reply.code(404).send({
                 message: "Seat not found"
@@ -155,10 +144,9 @@ export async function seatsRoutes(app: FastifyInstance) {
         }
     }, async (request, reply) => {
 
-        const { seatid } = request.params as { seatid: string };
+        const { seatid } = request.params as SeatParams;
 
-        const seat = await deleteSeat(Number(seatid));
-
+        const seat = await deleteSeat(seatid);
         if (!seat) {
             return reply.code(404).send({
                 message: "Seat not found"

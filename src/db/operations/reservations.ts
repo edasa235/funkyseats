@@ -36,8 +36,8 @@ export async function updateReservation(
     id: number,
     data: {
         userId?: number;
-        seatId?: number;
-        meetingRoomId?: number;
+        seatId?: number | null;
+        meetingRoomId?: number | null;
         startTime?: Date;
         endTime?: Date;
     }

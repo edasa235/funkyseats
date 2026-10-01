@@ -1,5 +1,10 @@
 export const reservationSchema = {
     type: "object",
+    required: [
+        "userId",
+        "startTime",
+        "endTime"
+    ],
     properties: {
         id: {
             type: "integer"
@@ -8,12 +13,10 @@ export const reservationSchema = {
             type: "integer"
         },
         seatId: {
-            type: "integer",
-            nullable: true
+            type: ["integer", "null"]
         },
         meetingRoomId: {
-            type: "integer",
-            nullable: true
+            type: ["integer", "null"]
         },
         startTime: {
             type: "string",

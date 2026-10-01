@@ -7,6 +7,12 @@ import {
     getReservations,
     updateReservation
 } from "../db/operations/reservations";
+import {
+    CreateReservationBody,
+    ReservationParams,
+    toReservationData, toUpdateReservationData,
+    UpdateReservationBody
+} from "../types/reservations";
 
 export async function reservationsRoutes(app: FastifyInstance) {
 
@@ -47,11 +53,8 @@ export async function reservationsRoutes(app: FastifyInstance) {
             }
         }
     },  async (request, reply) => {
-
-        const { id } = request.params as { id: string };
-
-        const reservation = await getReservationById(Number(id));
-
+        const { id } = request.params as ReservationParams;
+        const reservation = await getReservationById(id);
         if (!reservation) {
             return reply.code(404).send({
                 message: "Reservation not found"
@@ -97,22 +100,10 @@ export async function reservationsRoutes(app: FastifyInstance) {
         }
     },async (request, reply) => {
 
-        const body = request.body as {
-            userId: number;
-            seatId?: number;
-            meetingRoomId?: number;
-            startTime: string;
-            endTime: string;
-        };
-
-        const reservation = await createReservation({
-            userId: body.userId,
-            seatId: body.seatId,
-            meetingRoomId: body.meetingRoomId,
-            startTime: new Date(body.startTime),
-            endTime: new Date(body.endTime)
-        });
-
+        const body = request.body as CreateReservationBody;
+        const reservation = await createReservation(
+            toReservationData(body)
+        );
         return reply.code(201).send(reservation);
     });
 
@@ -154,23 +145,12 @@ export async function reservationsRoutes(app: FastifyInstance) {
         }
     }, async (request, reply) => {
 
-        const { id } = request.params as { id: string };
-        const body = request.body as {
-            userId: number;
-            seatId?: number;
-            meetingRoomId?: number;
-            startTime: string;
-            endTime: string;
-        };
+        const { id } = request.params as ReservationParams;
+        const body = request.body as UpdateReservationBody;
+
         const reservation = await updateReservation(
-            Number(id),
-            {
-                userId: body.userId,
-                seatId: body.seatId,
-                meetingRoomId: body.meetingRoomId,
-                startTime: new Date(body.startTime),
-                endTime: new Date(body.endTime)
-            }
+            id,
+            toUpdateReservationData(body)
         );
         if (!reservation) {
             return reply.code(404).send({
@@ -195,11 +175,8 @@ export async function reservationsRoutes(app: FastifyInstance) {
             }
         }
     }, async (request, reply) => {
-
-        const { id } = request.params as { id: string };
-
-        const reservation = await deleteReservation(Number(id));
-
+        const { id } = request.params as ReservationParams;
+        const reservation = await deleteReservation(id);
         if (!reservation) {
             return reply.code(404).send({
                 message: "Reservation not found"
