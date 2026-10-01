@@ -8,15 +8,10 @@ export const seatSchema = {
             type: "string",
             maxLength: 50
         },
-        room: {
-            type: "string",
-            maxLength: 50
+        roomId: {
+            type: "integer"
         },
-        status: {
-            type: "string",
-            maxLength: 20
-        },
-        created_at: {
+        createdAt: {
             type: "string",
             format: "date-time"
         }
