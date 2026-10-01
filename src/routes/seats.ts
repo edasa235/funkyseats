@@ -1,8 +1,16 @@
 import { FastifyInstance } from "fastify";
 import { seatSchema } from "../schemas/seats";
-import {createSeat, deleteSeat, getAllSeats, getSeatById, updateSeat} from "../db/operations/seats";
+import {
+    createSeat,
+    deleteSeat,
+    getAllSeats,
+    getSeatById,
+    updateSeat
+} from "../db/operations/seats";
 
 export async function seatsRoutes(app: FastifyInstance) {
+
+    // GET /seats
     app.get("/seats", {
         schema: {
             description: "Get all seats",
@@ -14,11 +22,11 @@ export async function seatsRoutes(app: FastifyInstance) {
                 }
             }
         }
-    }, async (request, reply) => {
-
+    }, async () => {
         return await getAllSeats();
     });
 
+    // GET /seats/:seatid
     app.get("/seats/:seatid", {
         schema: {
             description: "Get a seat by ID",
@@ -26,7 +34,7 @@ export async function seatsRoutes(app: FastifyInstance) {
             params: {
                 type: "object",
                 properties: {
-                    seatid: { type: "number" },
+                    seatid: { type: "integer" }
                 },
                 required: ["seatid"]
             },
@@ -37,24 +45,30 @@ export async function seatsRoutes(app: FastifyInstance) {
     }, async (request, reply) => {
 
         const { seatid } = request.params as { seatid: string };
+
         const seat = await getSeatById(Number(seatid));
+
         if (!seat) {
             return reply.code(404).send({
                 message: "Seat not found"
             });
         }
+
         return seat;
     });
+
+    // POST /seats
     app.post("/seats", {
         schema: {
             description: "Create a new seat",
             tags: ["Seats"],
             body: {
                 type: "object",
-                required: ["name", "roomId"],
+                required: ["name"],
                 properties: {
                     name: { type: "string" },
-                    roomId: { type: "integer" }
+                    type: { type: "string" },
+                    bookingRestriction: { type: "string" }
                 }
             },
             response: {
@@ -65,18 +79,20 @@ export async function seatsRoutes(app: FastifyInstance) {
 
         const body = request.body as {
             name: string;
-            roomId: number;
+            type?: string;
+            bookingRestriction?: string;
         };
 
         const seat = await createSeat(
             body.name,
-            body.roomId
+            body.type,
+            body.bookingRestriction
         );
 
         return reply.code(201).send(seat);
     });
 
-
+    // PATCH /seats/:seatid
     app.patch("/seats/:seatid", {
         schema: {
             description: "Update a seat",
@@ -84,7 +100,7 @@ export async function seatsRoutes(app: FastifyInstance) {
             params: {
                 type: "object",
                 properties: {
-                    seatid: { type: "string" }
+                    seatid: { type: "integer" }
                 },
                 required: ["seatid"]
             },
@@ -92,7 +108,8 @@ export async function seatsRoutes(app: FastifyInstance) {
                 type: "object",
                 properties: {
                     name: { type: "string" },
-                    roomId: { type: "integer" }
+                    type: { type: "string" },
+                    bookingRestriction: { type: "string" }
                 }
             },
             response: {
@@ -105,7 +122,8 @@ export async function seatsRoutes(app: FastifyInstance) {
 
         const body = request.body as {
             name?: string;
-            roomId?: number;
+            type?: string;
+            bookingRestriction?: string;
         };
 
         const seat = await updateSeat(
@@ -122,7 +140,7 @@ export async function seatsRoutes(app: FastifyInstance) {
         return seat;
     });
 
-
+    // DELETE /seats/:seatid
     app.delete("/seats/:seatid", {
         schema: {
             description: "Delete a seat",
@@ -130,14 +148,9 @@ export async function seatsRoutes(app: FastifyInstance) {
             params: {
                 type: "object",
                 properties: {
-                    seatid: { type: "string" }
+                    seatid: { type: "integer" }
                 },
                 required: ["seatid"]
-            },
-            response: {
-                204: {
-                    type: "null"
-                }
             }
         }
     }, async (request, reply) => {

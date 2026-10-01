@@ -70,7 +70,6 @@ export async function reservationsRoutes(app: FastifyInstance) {
             body: {
                 type: "object",
                 required: [
-                    "seatId",
                     "userId",
                     "startTime",
                     "endTime"
@@ -99,18 +98,20 @@ export async function reservationsRoutes(app: FastifyInstance) {
     },async (request, reply) => {
 
         const body = request.body as {
-            seatId: number;
             userId: number;
+            seatId?: number;
+            meetingRoomId?: number;
             startTime: string;
             endTime: string;
         };
 
-        const reservation = await createReservation(
-            body.seatId,
-            body.userId,
-            new Date(body.startTime),
-            new Date(body.endTime)
-        );
+        const reservation = await createReservation({
+            userId: body.userId,
+            seatId: body.seatId,
+            meetingRoomId: body.meetingRoomId,
+            startTime: new Date(body.startTime),
+            endTime: new Date(body.endTime)
+        });
 
         return reply.code(201).send(reservation);
     });
@@ -154,22 +155,23 @@ export async function reservationsRoutes(app: FastifyInstance) {
     }, async (request, reply) => {
 
         const { id } = request.params as { id: string };
-
         const body = request.body as {
-            seatId: number;
             userId: number;
+            seatId?: number;
+            meetingRoomId?: number;
             startTime: string;
             endTime: string;
         };
-
         const reservation = await updateReservation(
             Number(id),
-            body.seatId,
-            body.userId,
-            new Date(body.startTime),
-            new Date(body.endTime)
+            {
+                userId: body.userId,
+                seatId: body.seatId,
+                meetingRoomId: body.meetingRoomId,
+                startTime: new Date(body.startTime),
+                endTime: new Date(body.endTime)
+            }
         );
-
         if (!reservation) {
             return reply.code(404).send({
                 message: "Reservation not found"

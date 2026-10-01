@@ -4,11 +4,16 @@ export const reservationSchema = {
         id: {
             type: "integer"
         },
-        seatId: {
-            type: "integer"
-        },
         userId: {
             type: "integer"
+        },
+        seatId: {
+            type: "integer",
+            nullable: true
+        },
+        meetingRoomId: {
+            type: "integer",
+            nullable: true
         },
         startTime: {
             type: "string",
