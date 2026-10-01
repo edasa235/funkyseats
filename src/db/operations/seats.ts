@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { seats } from "../schema";
-import {db} from "../../index";
+import { db } from "../../index";
 
 export async function getAllSeats() {
     return await db
@@ -17,12 +17,17 @@ export async function getSeatById(id: number) {
     return result[0];
 }
 
-export async function createSeat(name: string, roomId: number) {
+export async function createSeat(
+    name: string,
+    type?: string,
+    bookingRestriction?: string
+) {
     const result = await db
         .insert(seats)
         .values({
             name,
-            roomId
+            type,
+            bookingRestriction
         })
         .returning();
 
@@ -33,7 +38,8 @@ export async function updateSeat(
     id: number,
     data: {
         name?: string;
-        roomId?: number;
+        type?: string;
+        bookingRestriction?: string;
     }
 ) {
     const result = await db

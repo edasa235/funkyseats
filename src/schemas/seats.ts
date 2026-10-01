@@ -8,8 +8,15 @@ export const seatSchema = {
             type: "string",
             maxLength: 50
         },
-        roomId: {
-            type: "integer"
+        type: {
+            type: "string",
+            maxLength: 50,
+            nullable: true
+        },
+        bookingRestriction: {
+            type: "string",
+            maxLength: 100,
+            nullable: true
         },
         createdAt: {
             type: "string",
