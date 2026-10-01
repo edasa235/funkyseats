@@ -1,6 +1,12 @@
 import { FastifyInstance } from "fastify";
 import { reservationSchema } from "../schemas/reservations";
-import {getReservations} from "../db/operations/reservations";
+import {
+    createReservation,
+    deleteReservation,
+    getReservationById,
+    getReservations,
+    updateReservation
+} from "../db/operations/reservations";
 
 export async function reservationsRoutes(app: FastifyInstance) {
 

@@ -25,6 +25,7 @@ async function start() {
 
     await app.register(seatsRoutes);
     await app.register(reservationsRoutes);
+    console.log(app.printRoutes());
 
     app.get("/", async () => {
         return {

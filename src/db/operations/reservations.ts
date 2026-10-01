@@ -12,7 +12,7 @@ export async function getReservationById(id: number) {
     .select()
     .from(reservations)
         .where(eq(reservations.id, id));
-    return result;
+    return result[0];
 }
 export async function createReservation(
     seatId: number,
@@ -58,5 +58,5 @@ export async function deleteReservation(
     const result = await db
     .delete(reservations)
     .where(eq(reservations.id, id));
-    return result;
+    return result[0];
 }

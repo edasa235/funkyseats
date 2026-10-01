@@ -51,10 +51,10 @@ export async function seatsRoutes(app: FastifyInstance) {
             tags: ["Seats"],
             body: {
                 type: "object",
-                required: ["name", "room"],
+                required: ["name", "roomId"],
                 properties: {
                     name: { type: "string" },
-                    room: { type: "string" }
+                    roomId: { type: "integer" }
                 }
             },
             response: {
@@ -92,8 +92,7 @@ export async function seatsRoutes(app: FastifyInstance) {
                 type: "object",
                 properties: {
                     name: { type: "string" },
-                    room: { type: "string" },
-                    status: { type: "string" }
+                    roomId: { type: "integer" }
                 }
             },
             response: {
