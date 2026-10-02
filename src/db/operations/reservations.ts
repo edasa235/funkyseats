@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import {and, eq, gt, lt} from "drizzle-orm";
 import { reservations } from "../schema";
 import { db } from "../../index";
 
@@ -58,4 +58,17 @@ export async function deleteReservation(id: number) {
         .returning();
 
     return result[0];
+}
+export async function getActiveReservations() {
+    const now = new Date();
+
+    return await db
+        .select()
+        .from(reservations)
+        .where(
+            and(
+                lt(reservations.startTime, now),
+                gt(reservations.endTime, now)
+            )
+        );
 }

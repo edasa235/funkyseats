@@ -1,5 +1,5 @@
-import { eq } from "drizzle-orm";
-import { seats } from "../schema";
+import {and, eq, gt, lt} from "drizzle-orm";
+import {reservations, seats} from "../schema";
 import { db } from "../../index";
 
 export async function getAllSeats() {
@@ -58,4 +58,32 @@ export async function deleteSeat(id: number) {
         .returning();
 
     return result[0];
+}
+export async function checkSeatAvailability(
+    seatId: number,
+    startTime: Date,
+    endTime: Date
+) {
+    const result = await db
+        .select()
+        .from(reservations)
+        .where(
+            and(
+                eq(reservations.seatId, seatId),
+                lt(reservations.startTime, endTime),
+                gt(reservations.endTime, startTime)
+            )
+        );
+
+    return result.length === 0;
+}
+export async function getSeatReservations(
+    seatId: number
+) {
+    return await db
+        .select()
+        .from(reservations)
+        .where(
+            eq(reservations.seatId, seatId)
+        );
 }

@@ -31,7 +31,9 @@ export const seats = pgTable("seats", {
     type: varchar("type", { length: 50 }),
 
     bookingRestriction: varchar("booking_restriction", { length: 100 }),
-
+    status: varchar("status", { length: 20 })
+        .notNull()
+        .default("available"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
