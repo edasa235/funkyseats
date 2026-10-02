@@ -3,7 +3,7 @@ import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import { seatsRoutes } from "./routes/seats";
 import { reservationsRoutes } from "./routes/reservations";
-
+import { meetingRoomsRoutes } from "./routes/room";
 const app = Fastify({
     logger: true
 });
@@ -25,6 +25,7 @@ async function start() {
 
     await app.register(seatsRoutes);
     await app.register(reservationsRoutes);
+    await app.register(meetingRoomsRoutes);
     console.log(app.printRoutes());
 
     app.get("/", async () => {
