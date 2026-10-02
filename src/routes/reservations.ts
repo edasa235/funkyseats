@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import { reservationSchema } from "../schemas/reservations";
 import {
     createReservation,
-    deleteReservation,
+    deleteReservation, getActiveReservations,
     getReservationById,
     getReservations,
     updateReservation
@@ -32,7 +32,20 @@ export async function reservationsRoutes(app: FastifyInstance) {
 
         return await getReservations();
     });
-
+    app.get("/reservations/active", {
+        schema: {
+            description: "Get active reservations",
+            tags: ["Reservations"],
+            response: {
+                200: {
+                    type: "array",
+                    items: reservationSchema
+                }
+            }
+        }
+    }, async () => {
+        return await getActiveReservations();
+    });
 
     // GET /reservations/:id
     app.get("/reservations/:id", {

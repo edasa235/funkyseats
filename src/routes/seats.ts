@@ -1,10 +1,11 @@
 import { FastifyInstance } from "fastify";
 import { seatSchema } from "../schemas/seats";
 import {
+    checkSeatAvailability,
     createSeat,
     deleteSeat,
     getAllSeats,
-    getSeatById,
+    getSeatById, getSeatReservations,
     updateSeat
 } from "../db/operations/seats";
 import {CreateSeatBody, SeatParams, UpdateSeatBody} from "../types/seats";
@@ -154,5 +155,51 @@ export async function seatsRoutes(app: FastifyInstance) {
         }
 
         return reply.code(204).send();
+    });
+    app.get("/seats/:id/reservations", async (request) => {
+
+        const { id } = request.params as {
+            id: number;
+        };
+
+        return await getSeatReservations(id);
+    });
+    app.get("/seats/:seatid/available", {
+        schema: {
+            description: "Check if a seat is available",
+            tags: ["Seats"],
+            params: {
+                type: "object",
+                properties: {
+                    seatid: { type: "integer" }
+                },
+                required: ["seatid"]
+            },
+            querystring: {
+                type: "object",
+                properties: {
+                    startTime: { type: "string", format: "date-time" },
+                    endTime: { type: "string", format: "date-time" }
+                },
+                required: ["startTime", "endTime"]
+            }
+        }
+    }, async (request, reply) => {
+        const { seatid } = request.params as { seatid: number };
+        const { startTime, endTime } = request.query as {
+            startTime: string;
+            endTime: string;
+        };
+
+        const available = await checkSeatAvailability(
+            seatid,
+            new Date(startTime),
+            new Date(endTime)
+        );
+
+        return {
+            seatId: seatid,
+            available
+        };
     });
 }
