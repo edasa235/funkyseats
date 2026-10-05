@@ -12,4 +12,5 @@ export type UpdateSeatBody = {
     name?: string;
     type?: string;
     bookingRestriction?: string;
+    status?: "available" | "deactivated";
 };

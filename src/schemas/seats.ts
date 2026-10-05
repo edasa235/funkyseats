@@ -18,6 +18,10 @@ export const seatSchema = {
             maxLength: 100,
             nullable: true
         },
+        status: {
+            type: "string",
+            enum: ["available", "deactivated"]
+        },
         createdAt: {
             type: "string",
             format: "date-time"

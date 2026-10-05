@@ -8,26 +8,32 @@ export async function getrooms () {
         .select()
         .from(meetingRooms)
 }
-export async function getroomsByID(id: number) {
+export async function getRoomById(id: number) {
     const rooms = await db
-    .select()
-    .from(meetingRooms)
+        .select()
+        .from(meetingRooms)
         .where(eq(meetingRooms.id, id))
+        .limit(1);
+
     return rooms[0];
 }
-export async function createRoom(data: {name: string, capacity: number }) {
-    const room = await db
+export async function createRoom(data: {
+    name: string;
+    capacity?: number;
+}) {
+    const result = await db
         .insert(meetingRooms)
         .values(data)
-        .returning()
+        .returning();
 
-    return room[0];
+    return result[0];
 }
 export async function updateRoom(
     id: number,
     data: {
         name?: string;
         capacity?: number;
+        status?: "available" | "deactivated";
     }
 ) {
     const room = await db
@@ -86,6 +92,11 @@ export async function getAvailableMeetingRooms(
     const availableRooms = [];
 
     for (const room of rooms) {
+
+        if (room.status === "deactivated") {
+            continue;
+        }
+
         const available = await checkRoomAvailability(
             room.id,
             startTime,

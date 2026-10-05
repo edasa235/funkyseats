@@ -1,4 +1,4 @@
-import {and, eq, gt, lt} from "drizzle-orm";
+import {and, eq, gt, lt, ne} from "drizzle-orm";
 import { reservations } from "../schema";
 import { db } from "../../index";
 
@@ -16,11 +16,42 @@ export async function getReservationById(id: number) {
 
     return result[0];
 }
+export async function hasOverlappingReservation(
+    seatId: number | null,
+    meetingRoomId: number | null,
+    startTime: Date,
+    endTime: Date,
+    excludeReservationId?: number
+) {
+    const conditions = [
+        lt(reservations.startTime, endTime),
+        gt(reservations.endTime, startTime),
+    ];
 
+    if (seatId !== null) {
+        conditions.push(eq(reservations.seatId, seatId));
+    }
+
+    if (meetingRoomId !== null) {
+        conditions.push(eq(reservations.meetingRoomId, meetingRoomId));
+    }
+
+    if (excludeReservationId !== undefined) {
+        conditions.push(ne(reservations.id, excludeReservationId));
+    }
+
+    const existing = await db
+        .select()
+        .from(reservations)
+        .where(and(...conditions))
+        .limit(1);
+
+    return existing.length > 0;
+}
 export async function createReservation(data: {
     userId: number;
-    seatId?: number;
-    meetingRoomId?: number;
+    seatId?: number | null;
+    meetingRoomId?: number | null;
     startTime: Date;
     endTime: Date;
 }) {

@@ -39,14 +39,15 @@ export const seats = pgTable("seats", {
 
 export const meetingRooms = pgTable("meeting_rooms", {
     id: serial("id").primaryKey(),
-
     name: varchar("name", { length: 100 }).notNull(),
-
     capacity: integer("capacity"),
+
+    status: varchar("status", { length: 20 })
+        .notNull()
+        .default("available"),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
-
 export const reservations = pgTable(
     "reservations",
     {
