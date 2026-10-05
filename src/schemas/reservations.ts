@@ -1,3 +1,13 @@
+export const errorResponseSchema = {
+    type: "object",
+    required: ["message"],
+    properties: {
+        message: {
+            type: "string"
+        }
+    }
+};
+
 export const reservationSchema = {
     type: "object",
     required: [

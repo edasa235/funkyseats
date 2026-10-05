@@ -1,4 +1,5 @@
 services:
+
   db:
     image: postgres:18.3-alpine
     container_name: funkyseats-db
@@ -8,17 +9,70 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
 
-    ports:
-      - "5432:5432"
-
     volumes:
       - db_data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
+  migrate:
+    build:
+      context: .
+
+    container_name: funkyseats-migrate
+
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    command: npx drizzle-kit migrate
+
+
+  backend:
+    build:
+      context: .
+
+    container_name: funkyseats-backend
+
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+
+    ports:
+      - "3001:3001"
+
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+    command: npm run dev:backend
+
+
+  frontend:
+    build:
+      context: .
+
+    container_name: funkyseats-frontend
+
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      - backend
+
+    command: npm run dev
+
 
 volumes:
   db_data:

@@ -5,14 +5,15 @@ import {
     deleteRoom,
     getAvailableMeetingRooms, getMeetingRoomReservations,
     getrooms,
-    getroomsByID,
+    getRoomById,
     updateRoom
 } from "../db/operations/room";
+import {errorResponseSchema} from "../schemas/reservations";
 
 
 export async function meetingRoomsRoutes(app: FastifyInstance) {
 
-    // GET /rooms
+    
     app.get("/rooms", {
         schema: {
             description: "Get all meeting rooms",
@@ -29,7 +30,7 @@ export async function meetingRoomsRoutes(app: FastifyInstance) {
     });
 
 
-    // GET /rooms/:id
+    
     app.get("/rooms/:id", {
         schema: {
             description: "Get meeting room by ID",
@@ -46,14 +47,15 @@ export async function meetingRoomsRoutes(app: FastifyInstance) {
             },
 
             response: {
-                200: meetingRoomSchema
+                200: meetingRoomSchema,
+                404: errorResponseSchema
             }
         }
     }, async (request, reply) => {
 
         const { id } = request.params as { id: number };
 
-        const room = await getroomsByID(id);
+        const room = await getRoomById(id);
 
         if (!room) {
             return reply.code(404).send({
@@ -65,7 +67,7 @@ export async function meetingRoomsRoutes(app: FastifyInstance) {
     });
 
 
-    // POST /rooms
+    
     app.post("/rooms", {
         schema: {
             description: "Create meeting room",
@@ -103,7 +105,7 @@ export async function meetingRoomsRoutes(app: FastifyInstance) {
     });
 
 
-    // PATCH /rooms/:id
+    
     app.patch("/rooms/:id", {
         schema: {
             description: "Update meeting room",
@@ -134,7 +136,8 @@ export async function meetingRoomsRoutes(app: FastifyInstance) {
             },
 
             response: {
-                200: meetingRoomSchema
+                200: meetingRoomSchema,
+                404: errorResponseSchema
             }
         }
     }, async (request, reply) => {
@@ -158,7 +161,7 @@ export async function meetingRoomsRoutes(app: FastifyInstance) {
     });
 
 
-    // DELETE /rooms/:id
+    
     app.delete("/rooms/:id", {
         schema: {
             description: "Delete meeting room",
@@ -190,7 +193,7 @@ export async function meetingRoomsRoutes(app: FastifyInstance) {
     });
 
 
-    // GET /rooms/available
+    
     app.get("/rooms/available", {
         schema: {
             description: "Get available meeting rooms",
@@ -238,7 +241,7 @@ export async function meetingRoomsRoutes(app: FastifyInstance) {
     });
 
 
-    // GET /rooms/:id/reservations
+    
     app.get("/rooms/:id/reservations", {
         schema: {
             description: "Get reservations for a meeting room",

@@ -12,6 +12,10 @@ export const meetingRoomSchema = {
             type: "integer",
             nullable: true
         },
+        status: {
+            type: "string",
+            enum: ["available", "deactivated"]
+        },
         createdAt: {
             type: "string",
             format: "date-time"

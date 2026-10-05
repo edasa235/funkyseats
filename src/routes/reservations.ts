@@ -1,22 +1,26 @@
-import { FastifyInstance } from "fastify";
-import { reservationSchema } from "../schemas/reservations";
+import {FastifyInstance} from "fastify";
+import {errorResponseSchema, reservationSchema} from "../schemas/reservations";
 import {
     createReservation,
-    deleteReservation, getActiveReservations,
+    deleteReservation,
+    getActiveReservations,
     getReservationById,
-    getReservations,
+    getReservations, hasOverlappingReservation,
     updateReservation
 } from "../db/operations/reservations";
 import {
     CreateReservationBody,
     ReservationParams,
-    toReservationData, toUpdateReservationData,
+    toReservationData,
+    toUpdateReservationData,
     UpdateReservationBody
 } from "../types/reservations";
+import {getSeatById} from "../db/operations/seats";
+import {getRoomById} from "../db/operations/room";
 
 export async function reservationsRoutes(app: FastifyInstance) {
 
-    // GET /reservations
+    
     app.get("/reservations", {
         schema: {
             description: "Get all reservations",
@@ -28,7 +32,7 @@ export async function reservationsRoutes(app: FastifyInstance) {
                 }
             }
         }
-    },async () => {
+    }, async () => {
 
         return await getReservations();
     });
@@ -47,7 +51,7 @@ export async function reservationsRoutes(app: FastifyInstance) {
         return await getActiveReservations();
     });
 
-    // GET /reservations/:id
+    
     app.get("/reservations/:id", {
         schema: {
             description: "Get reservation by ID",
@@ -62,11 +66,12 @@ export async function reservationsRoutes(app: FastifyInstance) {
                 required: ["id"]
             },
             response: {
-                200: reservationSchema
+                200: reservationSchema,
+                404: errorResponseSchema
             }
         }
-    },  async (request, reply) => {
-        const { id } = request.params as ReservationParams;
+    }, async (request, reply) => {
+        const {id} = request.params as ReservationParams;
         const reservation = await getReservationById(id);
         if (!reservation) {
             return reply.code(404).send({
@@ -76,26 +81,22 @@ export async function reservationsRoutes(app: FastifyInstance) {
 
         return reservation;
     });
-
-
-    // POST /reservations
     app.post("/reservations", {
         schema: {
             description: "Create a reservation",
             tags: ["Reservations"],
             body: {
                 type: "object",
-                required: [
-                    "userId",
-                    "startTime",
-                    "endTime"
-                ],
+                required: ["userId", "startTime", "endTime"],
                 properties: {
-                    seatId: {
-                        type: "integer"
-                    },
                     userId: {
                         type: "integer"
+                    },
+                    seatId: {
+                        type: ["integer", "null"]
+                    },
+                    meetingRoomId: {
+                        type: ["integer", "null"]
                     },
                     startTime: {
                         type: "string",
@@ -108,18 +109,90 @@ export async function reservationsRoutes(app: FastifyInstance) {
                 }
             },
             response: {
-                201: reservationSchema
+                201: reservationSchema,
+                400: errorResponseSchema,
+                404: errorResponseSchema,
+                409: errorResponseSchema
+
             }
         }
-    },async (request, reply) => {
+    }, async (request, reply) => {
+    const body = request.body as CreateReservationBody;
 
-        const body = request.body as CreateReservationBody;
-        const reservation = await createReservation(
-            toReservationData(body)
-        );
-        return reply.code(201).send(reservation);
-    });
+    
+    if (
+        (body.seatId === null || body.seatId === undefined) &&
+        (body.meetingRoomId === null || body.meetingRoomId === undefined)
+    ) {
+        return reply.code(400).send({
+            message: "Either seatId or meetingRoomId is required"
+        });
+    }
 
+    if (
+        body.seatId !== null &&
+        body.seatId !== undefined &&
+        body.meetingRoomId !== null &&
+        body.meetingRoomId !== undefined
+    ) {
+        return reply.code(400).send({
+            message: "Only one of seatId or meetingRoomId can be provided"
+        });
+    }
+
+    
+    if (body.seatId !== null && body.seatId !== undefined) {
+        const seat = await getSeatById(body.seatId);
+
+        if (!seat) {
+            return reply.code(404).send({
+                message: "Seat not found"
+            });
+        }
+
+        if (seat.status === "deactivated") {
+            return reply.code(409).send({
+                message: "Seat is deactivated and cannot be reserved"
+            });
+        }
+    }
+
+    if (body.meetingRoomId !== null && body.meetingRoomId !== undefined) {
+        const room = await getRoomById(body.meetingRoomId);
+
+        if (!room) {
+            return reply.code(404).send({
+                message: "Meeting room not found"
+            });
+        }
+
+        if (room.status === "deactivated") {
+            return reply.code(409).send({
+                message: "Meeting room is deactivated and cannot be reserved"
+            });
+        }
+    }
+
+    const reservationData = toReservationData(body);
+
+    
+    const overlapping = await hasOverlappingReservation(
+        reservationData.seatId ?? null,
+        reservationData.meetingRoomId ?? null,
+        reservationData.startTime,
+        reservationData.endTime
+    );
+
+    if (overlapping) {
+        return reply.code(409).send({
+            message: "Resource is already reserved during this time"
+        });
+    }
+
+    const reservation = await createReservation(reservationData);
+
+    return reply.code(201).send(reservation);
+});
     app.patch("/reservations/:id", {
         schema: {
             description: "Update a reservation",
@@ -127,21 +200,25 @@ export async function reservationsRoutes(app: FastifyInstance) {
             params: {
                 type: "object",
                 properties: {
-                    id: { type: "string" }
+                    id: {
+                        type: "string"
+                    }
                 },
                 required: ["id"]
             },
             body: {
                 type: "object",
-                required: [
-                    "seatId",
-                    "userId",
-                    "startTime",
-                    "endTime"
-                ],
+                required: ["userId", "startTime", "endTime"],
                 properties: {
-                    seatId: { type: "integer" },
-                    userId: { type: "integer" },
+                    userId: {
+                        type: "integer"
+                    },
+                    seatId: {
+                        type: ["integer", "null"]
+                    },
+                    meetingRoomId: {
+                        type: ["integer", "null"]
+                    },
                     startTime: {
                         type: "string",
                         format: "date-time"
@@ -153,23 +230,106 @@ export async function reservationsRoutes(app: FastifyInstance) {
                 }
             },
             response: {
-                200: reservationSchema
+                200: reservationSchema,
+                400: errorResponseSchema,
+                404: errorResponseSchema,
+                409: errorResponseSchema
             }
         }
     }, async (request, reply) => {
 
-        const { id } = request.params as ReservationParams;
+        const {id} = request.params as ReservationParams;
         const body = request.body as UpdateReservationBody;
 
-        const reservation = await updateReservation(
-            id,
-            toUpdateReservationData(body)
-        );
-        if (!reservation) {
+        
+        const existingReservation = await getReservationById(id);
+
+        if (!existingReservation) {
             return reply.code(404).send({
                 message: "Reservation not found"
             });
         }
+
+        
+        if (
+            (body.seatId === null || body.seatId === undefined) &&
+            (body.meetingRoomId === null || body.meetingRoomId === undefined)
+        ) {
+            return reply.code(400).send({
+                message: "Either seatId or meetingRoomId is required"
+            });
+        }
+
+        if (
+            body.seatId !== null &&
+            body.seatId !== undefined &&
+            body.meetingRoomId !== null &&
+            body.meetingRoomId !== undefined
+        ) {
+            return reply.code(400).send({
+                message: "Only one of seatId or meetingRoomId can be provided"
+            });
+        }
+
+        
+        if (body.seatId !== null && body.seatId !== undefined) {
+            const seat = await getSeatById(body.seatId);
+
+            if (!seat) {
+                return reply.code(404).send({
+                    message: "Seat not found"
+                });
+            }
+
+            if (seat.status === "deactivated") {
+                return reply.code(409).send({
+                    message: "Seat is deactivated and cannot be reserved"
+                });
+            }
+        }
+
+        
+        if (
+            body.meetingRoomId !== null &&
+            body.meetingRoomId !== undefined
+        ) {
+            const room = await getRoomById(body.meetingRoomId);
+
+            if (!room) {
+                return reply.code(404).send({
+                    message: "Meeting room not found"
+                });
+            }
+
+            if (room.status === "deactivated") {
+                return reply.code(409).send({
+                    message: "Meeting room is deactivated and cannot be reserved"
+                });
+            }
+        }
+
+        const reservationData = toUpdateReservationData(body);
+
+        
+        
+        const overlapping = await hasOverlappingReservation(
+            reservationData.seatId ?? null,
+            reservationData.meetingRoomId ?? null,
+            reservationData.startTime,
+            reservationData.endTime,
+            Number(id)
+        );
+
+        if (overlapping) {
+            return reply.code(409).send({
+                message: "Resource is already reserved during this time"
+            });
+        }
+
+        const reservation = await updateReservation(
+            id,
+            reservationData
+        );
 
         return reservation;
     });
@@ -188,7 +348,7 @@ export async function reservationsRoutes(app: FastifyInstance) {
             }
         }
     }, async (request, reply) => {
-        const { id } = request.params as ReservationParams;
+        const {id} = request.params as ReservationParams;
         const reservation = await deleteReservation(id);
         if (!reservation) {
             return reply.code(404).send({

@@ -9,10 +9,11 @@ import {
     updateSeat
 } from "../db/operations/seats";
 import {CreateSeatBody, SeatParams, UpdateSeatBody} from "../types/seats";
+import {errorResponseSchema} from "../schemas/reservations";
 
 export async function seatsRoutes(app: FastifyInstance) {
 
-    // GET /seats
+    
     app.get("/seats", {
         schema: {
             description: "Get all seats",
@@ -28,7 +29,7 @@ export async function seatsRoutes(app: FastifyInstance) {
         return await getAllSeats();
     });
 
-    // GET /seats/:seatid
+    
     app.get("/seats/:seatid", {
         schema: {
             description: "Get a seat by ID",
@@ -41,7 +42,8 @@ export async function seatsRoutes(app: FastifyInstance) {
                 required: ["seatid"]
             },
             response: {
-                200: seatSchema
+                200: seatSchema,
+                404: errorResponseSchema
             }
         }
     }, async (request, reply) => {
@@ -60,7 +62,7 @@ export async function seatsRoutes(app: FastifyInstance) {
         return seat;
     });
 
-    // POST /seats
+    
     app.post("/seats", {
         schema: {
             description: "Create a new seat",
@@ -91,7 +93,7 @@ export async function seatsRoutes(app: FastifyInstance) {
         return reply.code(201).send(seat);
     });
 
-    // PATCH /seats/:seatid
+    
     app.patch("/seats/:seatid", {
         schema: {
             description: "Update a seat",
@@ -108,11 +110,16 @@ export async function seatsRoutes(app: FastifyInstance) {
                 properties: {
                     name: {type: "string"},
                     type: {type: "string"},
-                    bookingRestriction: {type: "string"}
+                    bookingRestriction: {type: "string"},
+                    status: {
+                        type: "string",
+                        enum: ["available", "deactivated"]
+                    }
                 }
             },
             response: {
-                200: seatSchema
+                200: seatSchema,
+                404: errorResponseSchema
             }
         }
     }, async (request, reply) => {
@@ -130,7 +137,7 @@ export async function seatsRoutes(app: FastifyInstance) {
         return seat;
     });
 
-    // DELETE /seats/:seatid
+    
     app.delete("/seats/:seatid", {
         schema: {
             description: "Delete a seat",

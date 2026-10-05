@@ -9,12 +9,13 @@ export async function getAllSeats() {
 }
 
 export async function getSeatById(id: number) {
-    const result = await db
+    const seatsResult = await db
         .select()
         .from(seats)
-        .where(eq(seats.id, id));
+        .where(eq(seats.id, id))
+        .limit(1);
 
-    return result[0];
+    return seatsResult[0];
 }
 
 export async function createSeat(
@@ -40,6 +41,7 @@ export async function updateSeat(
         name?: string;
         type?: string;
         bookingRestriction?: string;
+        status?: "available" | "deactivated";
     }
 ) {
     const result = await db
@@ -64,6 +66,10 @@ export async function checkSeatAvailability(
     startTime: Date,
     endTime: Date
 ) {
+    const seat = await getSeatById(seatId);
+    if (!seat || seat.status === "deactivated") {
+        return false;
+    }
     const result = await db
         .select()
         .from(reservations)
