@@ -79,3 +79,35 @@ export async function checkRoomAvailability(
 
     return response.json();
 }
+export async function updateSeatStatus(
+    userId: number,
+    id: number,
+    status: "available" | "deactivated"
+) {
+    const response = await fetch(
+        `${API_URL}/seats/${id}/status`,
+        {
+            method: "PATCH",
+
+            headers: {
+                "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify({
+                userId,
+                status,
+            }),
+        }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            result.message ||
+            "Failed to update seat status"
+        );
+    }
+
+    return result;
+}

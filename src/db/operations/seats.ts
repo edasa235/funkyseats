@@ -93,3 +93,15 @@ export async function getSeatReservations(
             eq(reservations.seatId, seatId)
         );
 }
+export async function updateSeatStatus(
+    id: number,
+    status: "available" | "deactivated"
+) {
+    const result = await db
+        .update(seats)
+        .set({ status })
+        .where(eq(seats.id, id))
+        .returning();
+
+    return result[0];
+}

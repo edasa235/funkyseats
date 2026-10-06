@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {checkRoomAvailability, checkSeatAvailability, createReservation, getRooms, getSeats} from "../lib/api";
+import {
+  checkRoomAvailability,
+  checkSeatAvailability,
+  createReservation,
+  getRooms,
+  getSeats,
+  updateSeatStatus
+} from "../lib/api";
 import {MeetingRoom, Seat} from "../types/seats";
 
 export default function Home() {
@@ -10,6 +17,10 @@ export default function Home() {
   const [rooms, setRooms] = useState<MeetingRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [role, setRole] =
+      useState<"user" | "admin">("user");
+  const currentUserId =
+      role === "admin" ? 2 : 1;
   const [seatAvailability, setSeatAvailability] =
       useState<Record<number, boolean>>({});
 
@@ -227,9 +238,21 @@ export default function Home() {
           <button className="profile-button">
             Log in
           </button>
-          <select>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
+          <select
+              value={role}
+              onChange={(e) =>
+                  setRole(
+                      e.target.value as "user" | "admin"
+                  )
+              }
+          >
+            <option value="user">
+              User
+            </option>
+
+            <option value="admin">
+              Admin
+            </option>
           </select>
         </header>
 
@@ -341,24 +364,30 @@ export default function Home() {
                 </div>
 
                 <div className="seat-grid">
-
                   {seats.map((seat) => {
+
                     const available =
                         seat.status === "available" &&
                         seatAvailability[seat.id];
+
+                    const inactive =
+                        seat.status === "deactivated";
+
                     return (
                         <div
                             key={seat.id}
                             className={`seat ${
-                                !available ? "disabled" : ""
+                                !available
+                                    ? "disabled"
+                                    : ""
                             }`}
                         >
 
                           <div className="seat-top">
 
-                      <span className="seat-id">
-                        {seat.name}
-                      </span>
+                <span className="seat-id">
+                    {seat.name}
+                </span>
 
                             <span
                                 className={`status ${
@@ -367,12 +396,15 @@ export default function Home() {
                                         : "unavailable"
                                 }`}
                             >
-                        {available
+                    {inactive
+                        ? "deactivated"
+                        : available
                             ? "Available"
                             : "Taken"}
-                      </span>
+                </span>
 
                           </div>
+
 
                           <div className="seat-info">
 
@@ -381,27 +413,86 @@ export default function Home() {
                             </strong>
 
                             <span>
-                        Desk seat
-                      </span>
+                    Desk seat
+                </span>
+
+                            {seat.bookingRestriction && (
+                                <span>
+                        {seat.bookingRestriction}
+                    </span>
+                            )}
 
                           </div>
+
 
                           <button
                               className="reserve-button"
                               disabled={!available}
                               onClick={() => {
                                 if (available) {
-                                  handleReserve("seat", seat.id);
+                                  handleReserve(
+                                      "seat",
+                                      seat.id
+                                  );
                                 }
                               }}
                           >
-                            {available ? "Reserve" : "Unavailable"}
+                            {available
+                                ? "Reserve"
+                                : inactive
+                                    ? "deactivated"
+                                    : "Unavailable"}
                           </button>
+
+
+                          {role === "admin" && (
+                              <button
+                                  className="admin-seat-button"
+                                  onClick={async () => {
+
+                                    try {
+
+                                      const newStatus =
+                                          seat.status === "available"
+                                              ? "deactivated"
+                                              : "available";
+
+                                      await updateSeatStatus(
+                                          currentUserId,
+                                          seat.id,
+                                          newStatus
+                                      );
+
+                                      const seatData =
+                                          await getSeats();
+
+                                      setSeats(
+                                          seatData
+                                      );
+
+                                    } catch (error) {
+
+                                      console.error(
+                                          error
+                                      );
+
+                                      alert(
+                                          error instanceof Error
+                                              ? error.message
+                                              : "Could not update seat"
+                                      );
+                                    }
+                                  }}
+                              >
+                                {seat.status === "available"
+                                    ? "Deactivate"
+                                    : "Activate"}
+                              </button>
+                          )}
 
                         </div>
                     );
                   })}
-
                 </div>
               </section>
           )}

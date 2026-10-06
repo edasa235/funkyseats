@@ -150,9 +150,9 @@ export async function reservationsRoutes(app: FastifyInstance) {
             });
         }
 
-        if (seat.status === "deactivated") {
+        if (seat.status !== "available") {
             return reply.code(409).send({
-                message: "Seat is deactivated and cannot be reserved"
+                message: "Seat is inactive and cannot be reserved"
             });
         }
     }
@@ -292,9 +292,9 @@ export async function reservationsRoutes(app: FastifyInstance) {
                 });
             }
 
-            if (seat.status === "deactivated") {
+            if (seat.status !== "available") {
                 return reply.code(409).send({
-                    message: "Seat is deactivated and cannot be reserved"
+                    message: "Seat is inactive and cannot be reserved"
                 });
             }
         }

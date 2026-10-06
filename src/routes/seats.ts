@@ -6,10 +6,11 @@ import {
     deleteSeat,
     getAllSeats,
     getSeatById, getSeatReservations,
-    updateSeat
+    updateSeat, updateSeatStatus
 } from "../db/operations/seats";
 import {CreateSeatBody, SeatParams, UpdateSeatBody} from "../types/seats";
 import {errorResponseSchema} from "../schemas/reservations";
+import {getUserWithRole} from "../db/operations/users";
 
 export async function seatsRoutes(app: FastifyInstance) {
 
@@ -236,4 +237,102 @@ export async function seatsRoutes(app: FastifyInstance) {
             available
         };
     });
-}
+    app.patch("/seats/:id/status", {
+        schema: {
+            description:
+                "Activate or deactivate a seat. Admin only.",
+
+            tags: ["Seats"],
+
+            params: {
+                type: "object",
+                properties: {
+                    id: {
+                        type: "integer",
+                    },
+                },
+                required: ["id"],
+            },
+
+            body: {
+                type: "object",
+                properties: {
+                    userId: {
+                        type: "integer",
+                    },
+
+                    status: {
+                        type: "string",
+                        enum: [
+                            "available",
+                            "deactivated",
+                        ],
+                    },
+                },
+
+                required: [
+                    "userId",
+                    "status",
+                ],
+            },
+        },
+    }, async (request, reply) => {
+
+        const { id } =
+            request.params as {
+                id: number;
+            };
+
+        const {
+            userId,
+            status,
+        } = request.body as {
+            userId: number;
+            status:
+                | "available"
+                | "deactivated";
+        };
+
+
+        // Find user and role
+        const user =
+            await getUserWithRole(userId);
+
+
+        // User doesn't exist
+        if (!user) {
+            return reply.code(403).send({
+                message: "User not found",
+            });
+        }
+
+
+        // Admin check
+        if (user.roleName !== "admin") {
+            return reply.code(403).send({
+                message:
+                    "Only admins can change seat status",
+            });
+        }
+
+
+        // Check seat exists
+        const seat =
+            await getSeatById(id);
+
+        if (!seat) {
+            return reply.code(404).send({
+                message: "Seat not found",
+            });
+        }
+
+
+        // Update status
+        const updatedSeat =
+            await updateSeatStatus(
+                id,
+                status
+            );
+
+        return updatedSeat;
+    });}
