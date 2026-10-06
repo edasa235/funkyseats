@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
-    "dev:backend": "tsx src/server.ts",
+    "dev:backend": "tsx watch src/server.ts",
     "build": "next build",
+    "seed": "tsx src/db/seed.ts",
     "start": "next start"
   },
   "repository": {
@@ -22,6 +23,7 @@
   },
   "homepage": "https://github.com/edasa235/funkyseats#readme",
   "dependencies": {
+    "@fastify/cors": "^11.3.0",
     "@fastify/swagger": "^9.9.0",
     "@fastify/swagger-ui": "^6.1.1",
     "dotenv": "^18.0.4",

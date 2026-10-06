@@ -189,7 +189,7 @@ export async function seatsRoutes(app: FastifyInstance) {
             params: {
                 type: "object",
                 properties: {
-                    id: {type: "integer"}
+                    id: { type: "integer" }
                 },
                 required: ["id"]
             },
@@ -209,9 +209,9 @@ export async function seatsRoutes(app: FastifyInstance) {
             }
         }
     }, async (request, reply) => {
-        const {id} = request.params as { id: number };
+        const { id } = request.params as { id: number };
 
-        const {startTime, endTime} = request.query as {
+        const { startTime, endTime } = request.query as {
             startTime: string;
             endTime: string;
         };

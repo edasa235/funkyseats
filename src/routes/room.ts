@@ -6,7 +6,7 @@ import {
     getAvailableMeetingRooms, getMeetingRoomReservations,
     getrooms,
     getRoomById,
-    updateRoom
+    updateRoom, checkRoomAvailability
 } from "../db/operations/room";
 import {errorResponseSchema} from "../schemas/reservations";
 
@@ -193,54 +193,61 @@ export async function meetingRoomsRoutes(app: FastifyInstance) {
     });
 
 
-    
-    app.get("/rooms/available", {
-        schema: {
-            description: "Get available meeting rooms",
-            tags: ["Meeting Rooms"],
 
+    app.get("/rooms/:id/available", {
+        schema: {
+            description: "Check if a meeting room is available",
+            tags: ["Meeting Rooms"],
+            params: {
+                type: "object",
+                properties: {
+                    id: { type: "integer" }
+                },
+                required: ["id"]
+            },
             querystring: {
                 type: "object",
-
-                required: [
-                    "startTime",
-                    "endTime"
-                ],
-
                 properties: {
                     startTime: {
                         type: "string",
                         format: "date-time"
                     },
-
                     endTime: {
                         type: "string",
                         format: "date-time"
                     }
-                }
-            },
-
-            response: {
-                200: {
-                    type: "array",
-                    items: meetingRoomSchema
-                }
+                },
+                required: ["startTime", "endTime"]
             }
         }
-    }, async (request) => {
+    }, async (request, reply) => {
+        const { id } = request.params as { id: number };
 
         const { startTime, endTime } = request.query as {
             startTime: string;
             endTime: string;
         };
 
-        return await getAvailableMeetingRooms(
-            new Date(startTime),
-            new Date(endTime)
+        const start = new Date(startTime);
+        const end = new Date(endTime);
+
+        if (start >= end) {
+            return reply.code(400).send({
+                message: "startTime must be before endTime"
+            });
+        }
+
+        const available = await checkRoomAvailability(
+            id,
+            start,
+            end
         );
+
+        return {
+            meetingRoomId: id,
+            available
+        };
     });
-
-
     
     app.get("/rooms/:id/reservations", {
         schema: {

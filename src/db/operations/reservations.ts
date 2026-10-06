@@ -103,3 +103,64 @@ export async function getActiveReservations() {
             )
         );
 }
+export async function hasUserOverlappingReservation(
+    userId: number,
+    startTime: Date,
+    endTime: Date,
+    excludeReservationId?: number
+) {
+    const conditions = [
+        eq(reservations.userId, userId),
+        lt(reservations.startTime, endTime),
+        gt(reservations.endTime, startTime),
+    ];
+
+    if (excludeReservationId !== undefined) {
+        conditions.push(ne(reservations.id, excludeReservationId));
+    }
+
+    const existing = await db
+        .select()
+        .from(reservations)
+        .where(and(...conditions))
+        .limit(1);
+
+    return existing.length > 0;
+}
+export async function checkSeatAvailability(
+    seatId: number,
+    startTime: Date,
+    endTime: Date
+) {
+    const result = await db
+        .select()
+        .from(reservations)
+        .where(
+            and(
+                eq(reservations.seatId, seatId),
+                lt(reservations.startTime, endTime),
+                gt(reservations.endTime, startTime)
+            )
+        );
+
+    return result.length === 0;
+}
+
+export async function checkRoomAvailability(
+    meetingRoomId: number,
+    startTime: Date,
+    endTime: Date
+) {
+    const result = await db
+        .select()
+        .from(reservations)
+        .where(
+            and(
+                eq(reservations.meetingRoomId, meetingRoomId),
+                lt(reservations.startTime, endTime),
+                gt(reservations.endTime, startTime)
+            )
+        );
+
+    return result.length === 0;
+}

@@ -5,7 +5,7 @@ import {
     deleteReservation,
     getActiveReservations,
     getReservationById,
-    getReservations, hasOverlappingReservation,
+    getReservations, hasOverlappingReservation, hasUserOverlappingReservation,
     updateReservation
 } from "../db/operations/reservations";
 import {
@@ -172,23 +172,34 @@ export async function reservationsRoutes(app: FastifyInstance) {
             });
         }
     }
+        const reservationData = toReservationData(body);
 
-    const reservationData = toReservationData(body);
+// Check if this user already has a reservation
+        const userHasReservation = await hasUserOverlappingReservation(
+            reservationData.userId,
+            reservationData.startTime,
+            reservationData.endTime
+        );
 
-    
-    const overlapping = await hasOverlappingReservation(
-        reservationData.seatId ?? null,
-        reservationData.meetingRoomId ?? null,
-        reservationData.startTime,
-        reservationData.endTime
-    );
+        if (userHasReservation) {
+            return reply.code(409).send({
+                message: "You already have a reservation during this time"
+            });
+        }
 
-    if (overlapping) {
-        return reply.code(409).send({
-            message: "Resource is already reserved during this time"
-        });
-    }
+// Check if the seat/room is already reserved
+        const overlapping = await hasOverlappingReservation(
+            reservationData.seatId ?? null,
+            reservationData.meetingRoomId ?? null,
+            reservationData.startTime,
+            reservationData.endTime
+        );
 
+        if (overlapping) {
+            return reply.code(409).send({
+                message: "Resource is already reserved during this time"
+            });
+        };
     const reservation = await createReservation(reservationData);
 
     return reply.code(201).send(reservation);
