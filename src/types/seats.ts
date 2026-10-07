@@ -14,3 +14,18 @@ export type UpdateSeatBody = {
     bookingRestriction?: string;
     status?: "available" | "deactivated";
 };
+export type Seat = {
+    id: number;
+    name: string;
+    type: string | null;
+    bookingRestriction: string | null;
+    status: string;
+    createdAt: string;
+};
+export type MeetingRoom = {
+    id: number;
+    name: string;
+    capacity: number | null;
+    status: string;
+    createdAt: string;
+};
